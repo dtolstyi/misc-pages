@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phone Numbers Generator</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="scripts/randexp.min.js"></script>
+</head>
+<body>
+<div class="container mt-5">
+    <h1 class="mb-4">Phone Numbers Generator</h1>
+    <form id="phoneForm">
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label for="countryCode" class="form-label">Country Code</label>
+                <select class="form-select" id="countryCode" required>
+                    <!-- Options will be dynamically populated -->
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label for="count" class="form-label">Count</label>
+                <input type="number" class="form-control" id="count" min="1" value="100" required>
+            </div>
+        </div>
+        <div class="mb-3">
+            <label for="generatedPhones" class="form-label">Generated Phones</label>
+            <textarea class="form-control" id="generatedPhones" rows="6" readonly></textarea>
+        </div>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-danger" id="clearButton">Clear</button>
+            <button type="button" class="btn btn-primary" id="generateButton">Generate</button>
+            <button type="button" class="btn btn-success" id="copyButton">Copy</button>
+        </div>
+    </form>
+
+    <!-- Toast container -->
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+        <div id="successToast" class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body">
+                    Phone numbers copied to clipboard!
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    // Data Array
+    const countriesPhoneDetails = [
+{ countryCode: "AC", phonePrefix: "+247", phoneRegex: "4\\d{4}" },
+      { countryCode: "AD", phonePrefix: "+376", phoneRegex: "(?:3\\d|6(?:[0-8]|90\\d{2}))\\d{4}" },
+      { countryCode: "AE", phonePrefix: "+971", phoneRegex: "5[024-68]\\d{7}" },
+      { countryCode: "AF", phonePrefix: "+93", phoneRegex: "7(?:[014-9]\\d|2[89]|30)\\d{6}" },
+      { countryCode: "AG", phonePrefix: "+1", phoneRegex: "268(?:464|7(?:1[3-9]|2\\d|3[246]|64|7[0-689]|8[02-68]))\\d{4}" },
+      { countryCode: "AI", phonePrefix: "+1", phoneRegex: "264(?:235|476|5(?:3[6-9]|8[1-4])|7(?:29|72))\\d{4}" },
+      { countryCode: "AL", phonePrefix: "+355", phoneRegex: "6(?:[689][2-9]|7[2-6])\\d{6}" },
+      { countryCode: "AM", phonePrefix: "+374", phoneRegex: "(?:4[1349]|55|77|88|9[1-9])\\d{6}" },
+      { countryCode: "AO", phonePrefix: "+244", phoneRegex: "9[1-49]\\d{7}" },
+      { countryCode: "AR", phonePrefix: "+54", phoneRegex: "675\\d{7}|9(?:11[2-9]\\d{7}|(?:2(?:2[013]|3[067]|49|6[01346]|80|9[147-9])|3(?:36|4[12358]|5[138]|6[24]|7[069]|8[013578]))[2-9]\\d{6}|\\d{4}[2-9]\\d{5})" },
+      { countryCode: "AS", phonePrefix: "+1", phoneRegex: "684(?:2(?:5[2468]|72)|7(?:3[13]|70))\\d{4}" },
+      { countryCode: "AT", phonePrefix: "+43", phoneRegex: "6(?:5[0-3579]|6[013-9]|[7-9]\\d)\\d{4,10}" },
+      { countryCode: "AU", phonePrefix: "+61", phoneRegex: "14(?:5\\d|71)\\d{5}|4(?:[0-3]\\d|4[47-9]|5[0-25-9]|6[6-9]|7[02-9]|8[147-9]|9[017-9])\\d{6}" },
+      { countryCode: "AW", phonePrefix: "+297", phoneRegex: "(?:5(?:6\\d|9[2-478])|6(?:[039]0|22|4[01]|6[0-2])|7[34]\\d|9(?:6[45]|9[4-8]))\\d{4}" },
+      { countryCode: "AX", phonePrefix: "+358", phoneRegex: "4(?:[0-8]\\d{6,8}|9\\d{9})|50\\d{6,8}" },
+      { countryCode: "AZ", phonePrefix: "+994", phoneRegex: "(?:36554|(?:4[04]|5[015]|60|7[07])\\d{3})\\d{4}" },
+      { countryCode: "BA", phonePrefix: "+387", phoneRegex: "6(?:0(?:3\\d|40)|[1-356]\\d|44[0-6]|71[137])\\d{5}" },
+      { countryCode: "BB", phonePrefix: "+1", phoneRegex: "246(?:2(?:[356]\\d|4[0-57-9]|8[0-79])|45\\d|8(?:[2-5]\\d|83))\\d{4}" },
+      { countryCode: "BD", phonePrefix: "+880", phoneRegex: "(?:1[13-9]\\d|(?:3[78]|44)[02-9]|6(?:44|6[02-9]))\\d{7}" },
+      { countryCode: "BE", phonePrefix: "+32", phoneRegex: "4(?:6[0135-8]|[79]\\d|8[3-9])\\d{6}" },
+      { countryCode: "BF", phonePrefix: "+226", phoneRegex: "(?:5[15-8]|[67]\\d)\\d{6}" },
+      { countryCode: "BG", phonePrefix: "+359", phoneRegex: "(?:8[7-9]\\d|9(?:8\\d|9[69]))\\d{6}|4(?:3[0789]|8\\d)\\d{5}" },
+      { countryCode: "BH", phonePrefix: "+973", phoneRegex: "(?:3(?:[1-4679]\\d|5[013-69]|8[0-47-9])\\d|6(?:3(?:00|33|6[16])|6(?:[69]\\d|3[03-9]|7[0-6])))\\d{4}" },
+      { countryCode: "BI", phonePrefix: "+257", phoneRegex: "(?:29|6[189]|7[124-9])\\d{6}" },
+      { countryCode: "BJ", phonePrefix: "+229", phoneRegex: "(?:6[1-8]|9[03-9])\\d{6}" },
+      { countryCode: "BL", phonePrefix: "+590", phoneRegex: "690(?:0[05-9]|[1-9]\\d)\\d{4}" },
+      { countryCode: "BM", phonePrefix: "+1", phoneRegex: "441(?:[37]\\d|5[0-39])\\d{5}" },
+      { countryCode: "BN", phonePrefix: "+673", phoneRegex: "22[89]\\d{4}|[78]\\d{6}" },
+      { countryCode: "BO", phonePrefix: "+591", phoneRegex: "[67]\\d{7}" },
+      { countryCode: "BQ", phonePrefix: "+599", phoneRegex: "(?:31(?:8[14-8]|9[14578])|416[145-9]|7(?:0[01]|7[07]|8\\d|9[056])\\d)\\d{3}" },
+      { countryCode: "BR", phonePrefix: "+55", phoneRegex: "(?:[189][1-9]|2[12478])(?:7|9\\d)\\d{7}|(?:3[1-578]|[46][1-9]|5[13-5]|7[13-579])(?:[6-8]|9\\d?)\\d{7}" },
+      { countryCode: "BS", phonePrefix: "+1", phoneRegex: "242(?:3(?:5[79]|[79]5)|4(?:[2-4][1-9]|5[1-8]|6[2-8]|7\\d|81)|5(?:2[45]|3[35]|44|5[1-9]|65|77)|6[34]6|7(?:27|38)|8(?:0[1-9]|1[02-9]|2\\d|99))\\d{4}" },
+      { countryCode: "BT", phonePrefix: "+975", phoneRegex: "(?:1[67]|77)\\d{6}" },
+      { countryCode: "BW", phonePrefix: "+267", phoneRegex: "7(?:[1-6]\\d|7[014-8])\\d{5}" },
+      { countryCode: "BY", phonePrefix: "+375", phoneRegex: "(?:2(?:5[5679]|9[1-9])|33\\d|44\\d)\\d{6}" },
+      { countryCode: "BZ", phonePrefix: "+501", phoneRegex: "6[0-35-7]\\d{5}" },
+      { countryCode: "CA", phonePrefix: "+1", phoneRegex: "(?:2(?:04|[23]6|[48]9|50)|3(?:06|43|65)|4(?:03|1[68]|3[178]|50)|5(?:06|1[49]|48|79|8[17])|6(?:0[04]|13|22|39|47)|7(?:0[59]|78|8[02])|8(?:[06]7|19|25|73)|90[25])[2-9]\\d{6}" },
+      { countryCode: "CC", phonePrefix: "+61", phoneRegex: "14(?:5\\d|71)\\d{5}|4(?:[0-2]\\d|3[0-57-9]|4[47-9]|5[0-25-9]|6[6-9]|7[02-9]|8[147-9]|9[017-9])\\d{6}" },
+      { countryCode: "CD", phonePrefix: "+243", phoneRegex: "8(?:[0-2459]\\d{2}|8)\\d{5}|9[017-9]\\d{7}" },
+      { countryCode: "CF", phonePrefix: "+236", phoneRegex: "7[0257]\\d{6}" },
+      { countryCode: "CG", phonePrefix: "+242", phoneRegex: "0[14-6]\\d{7}" },
+      { countryCode: "CH", phonePrefix: "+41", phoneRegex: "7[5-9]\\d{7}" },
+      { countryCode: "CI", phonePrefix: "+225", phoneRegex: "(?:0[1-9]|4\\d|5[14-9]|6[015-79]|[78][4-9])\\d{6}" },
+      { countryCode: "CK", phonePrefix: "+682", phoneRegex: "[5-8]\\d{4}" },
+      { countryCode: "CL", phonePrefix: "+56", phoneRegex: "2(?:1962\\d{4}|2\\d{7}|32[0-467]\\d{5})|(?:3[2-5]|[47][1-35]|5[1-3578]|6[13-57]|9[3-9])\\d{7}" },
+      { countryCode: "CM", phonePrefix: "+237", phoneRegex: "6[5-9]\\d{7}" },
+      { countryCode: "CN", phonePrefix: "+86", phoneRegex: "1(?:[38]\\d|4[57]|5[0-35-9]|7[0-35-8])\\d{8}" },
+      { countryCode: "CO", phonePrefix: "+57", phoneRegex: "3(?:0[0-5]|1\\d|2[0-3]|5[01])\\d{7}" },
+      { countryCode: "CR", phonePrefix: "+506", phoneRegex: "5(?:0[01]|7[0-3])\\d{5}|6(?:[0-4]\\d{3}|500[01])\\d{3}|(?:7[0-3]|8[3-9])\\d{6}" },
+      { countryCode: "CU", phonePrefix: "+53", phoneRegex: "5\\d{7}" },
+      { countryCode: "CV", phonePrefix: "+238", phoneRegex: "(?:9\\d|59)\\d{5}" },
+      { countryCode: "CW", phonePrefix: "+599", phoneRegex: "9(?:5(?:[12467]\\d|3[01])|6(?:[15-9]\\d|3[01]))\\d{4}" },
+      { countryCode: "CX", phonePrefix: "+61", phoneRegex: "14(?:5\\d|71)\\d{5}|4(?:[0-2]\\d|3[0-57-9]|4[47-9]|5[0-25-9]|6[6-9]|7[02-9]|8[147-9]|9[017-9])\\d{6}" },
+      { countryCode: "CY", phonePrefix: "+357", phoneRegex: "9[4-79]\\d{6}" },
+      { countryCode: "CZ", phonePrefix: "+420", phoneRegex: "(?:60[1-8]|7(?:0[2-5]|[2379]\\d))\\d{6}" },
+      { countryCode: "DE", phonePrefix: "+49", phoneRegex: "1(?:5[0-25-9]\\d{8}|6[023]\\d{7,8}|7\\d{8,9})" },
+      { countryCode: "DJ", phonePrefix: "+253", phoneRegex: "77\\d{6}" },
+      { countryCode: "DK", phonePrefix: "+45", phoneRegex: "(?:[2-7]\\d|8[126-9]|9[1-36-9])\\d{6}" },
+      { countryCode: "DM", phonePrefix: "+1", phoneRegex: "767(?:2(?:[234689]5|7[5-7])|31[5-7]|61[1-7])\\d{4}" },
+      { countryCode: "DO", phonePrefix: "+1", phoneRegex: "8[024]9[2-9]\\d{6}" },
+      { countryCode: "DZ", phonePrefix: "+213", phoneRegex: "(?:5[4-6]|7[7-9])\\d{7}|6(?:[569]\\d|7[0-6])\\d{6}" },
+      { countryCode: "EC", phonePrefix: "+593", phoneRegex: "9(?:(?:39|[45][89]|7[7-9]|[89]\\d)\\d|6(?:[017-9]\\d|2[0-4]))\\d{5}" },
+      { countryCode: "EE", phonePrefix: "+372", phoneRegex: "(?:5\\d|8[1-5])\\d{6}|5(?:[02]\\d{2}|1(?:[0-8]\\d|95)|5[0-478]\\d|64[0-4]|65[1-589])\\d{3}" },
+      { countryCode: "EG", phonePrefix: "+20", phoneRegex: "1(?:0[0-269]|1[0-245]|2[0-278]|5\\d)\\d{7}" },
+      { countryCode: "EH", phonePrefix: "+212", phoneRegex: "(?:6(?:[0-79]\\d|8[0-247-9])|7(?:[07][07]|6[12]))\\d{6}" },
+      { countryCode: "ER", phonePrefix: "+291", phoneRegex: "17[1-3]\\d{4}|7\\d{6}" },
+      { countryCode: "ES", phonePrefix: "+34", phoneRegex: "(?:6\\d{6}|7[1-48]\\d{5}|9(?:6906(?:09|10)|7390\\d{2}))\\d{2}" },
+      { countryCode: "ET", phonePrefix: "+251", phoneRegex: "9(?:[1-46-8]\\d|5[89])\\d{6}" },
+      { countryCode: "FI", phonePrefix: "+358", phoneRegex: "4[0-8]\\d{6,8}|50\\d{4,8}" },
+      { countryCode: "FJ", phonePrefix: "+679", phoneRegex: "(?:5[018]|[79]\\d|8[034679])\\d{5}" },
+      { countryCode: "FK", phonePrefix: "+500", phoneRegex: "[56]\\d{4}" },
+      { countryCode: "FM", phonePrefix: "+691", phoneRegex: "3[2357]0[1-9]\\d{3}|9[2-7]\\d{5}" },
+      { countryCode: "FO", phonePrefix: "+298", phoneRegex: "(?:[27][1-9]|5\\d)\\d{4}" },
+      { countryCode: "FR", phonePrefix: "+33", phoneRegex: "(?:6\\d|7[3-9])\\d{7}" },
+      { countryCode: "GA", phonePrefix: "+241", phoneRegex: "0?[2-7]\\d{6}" },
+      { countryCode: "GB", phonePrefix: "+44", phoneRegex: "7(?:[1-3]\\d{3}|4(?:[0-46-9]\\d{2}|5(?:[0-689]\\d|7[0-57-9]))|5(?:0[0-8]|[13-9]\\d|2[0-35-9])\\d|7(?:0(?:0[01]|[1-9]\\d)|[1-7]\\d{2}|8[02-9]\\d|9[0-689]\\d)|8(?:[014-9]\\d|[23][0-8])\\d|9(?:[024-9]\\d{2}|1(?:[02-9]\\d|1[028])|3[0-689]\\d))\\d{5}" },
+      { countryCode: "GD", phonePrefix: "+1", phoneRegex: "473(?:4(?:0[2-79]|1[04-9]|2[0-5]|58)|5(?:2[01]|3[3-8])|901)\\d{4}" },
+      { countryCode: "GE", phonePrefix: "+995", phoneRegex: "5(?:[14]4|5[0157-9]|68|7[0147-9]|9[0-35-9])\\d{6}" },
+      { countryCode: "GF", phonePrefix: "+594", phoneRegex: "694(?:[0249]\\d|1[2-9]|3[0-48])\\d{4}" },
+      { countryCode: "GG", phonePrefix: "+44", phoneRegex: "7(?:781\\d|839\\d|911[17])\\d{5}" },
+      { countryCode: "GH", phonePrefix: "+233", phoneRegex: "(?:2[034678]\\d|5(?:[0457]\\d|6[01]))\\d{6}" },
+      { countryCode: "GI", phonePrefix: "+350", phoneRegex: "(?:5[46-8]|62)\\d{6}" },
+      { countryCode: "GL", phonePrefix: "+299", phoneRegex: "(?:[25][1-9]|4[2-9])\\d{4}" },
+      { countryCode: "GM", phonePrefix: "+220", phoneRegex: "[23679]\\d{6}" },
+      { countryCode: "GN", phonePrefix: "+224", phoneRegex: "6[02356]\\d{7}" },
+      { countryCode: "GP", phonePrefix: "+590", phoneRegex: "690(?:0[05-9]|[1-9]\\d)\\d{4}" },
+      { countryCode: "GQ", phonePrefix: "+240", phoneRegex: "(?:222|55[15])\\d{6}" },
+      { countryCode: "GR", phonePrefix: "+30", phoneRegex: "69\\d{8}" },
+      { countryCode: "GT", phonePrefix: "+502", phoneRegex: "[345]\\d{7}" },
+      { countryCode: "GU", phonePrefix: "+1", phoneRegex: "671(?:3(?:00|3[39]|4[349]|55|6[26])|4(?:56|7[1-9]|8[0236-9])|5(?:55|6[2-5]|88)|6(?:3[2-578]|4[24-9]|5[34]|78|8[5-9])|7(?:[079]7|2[0167]|3[45]|47|8[789])|8(?:[2-5789]8|6[48])|9(?:2[29]|6[79]|7[179]|8[789]|9[78]))\\d{4}" },
+      { countryCode: "GW", phonePrefix: "+245", phoneRegex: "9(?:5(?:5\\d|6[0-2])|6(?:5[0-2]|6\\d|9[012])|77\\d)\\d{5}" },
+      { countryCode: "GY", phonePrefix: "+592", phoneRegex: "6\\d{6}" },
+      { countryCode: "HK", phonePrefix: "+852", phoneRegex: "(?:5(?:[1-59][0-46-9]|6[0-4689]|7[0-469])|6(?:0[1-9]|[1459]\\d|[2368][0-57-9]|7[0-79])|9(?:0[1-9]|1[02-9]|[2358][0-8]|[467]\\d))\\d{5}" },
+      { countryCode: "HN", phonePrefix: "+504", phoneRegex: "[37-9]\\d{7}" },
+      { countryCode: "HR", phonePrefix: "+385", phoneRegex: "9(?:01\\d|[1259]\\d{2}|7(?:[0679]\\d|51)|8\\d{1,2})\\d{5}" },
+      { countryCode: "HT", phonePrefix: "+509", phoneRegex: "[34]\\d{7}" },
+      { countryCode: "HU", phonePrefix: "+36", phoneRegex: "(?:[257]0|3[01])\\d{7}" },
+      { countryCode: "ID", phonePrefix: "+62", phoneRegex: "(?:2(?:1(?:3[145]|4[01]|5[1-469]|60|8[0359]|9\\d)|2(?:88|9[1256])|3[1-4]9|4(?:36|91)|5(?:1[349]|[2-4]9)|6[0-7]9|7(?:[1-36]9|4[39])|8[1-5]9|9[1-48]9)|3(?:19[1-3]|2[12]9|3[13]9|4(?:1[69]|39)|5[14]9|6(?:1[69]|2[89])|709)|4[13]19|5(?:1(?:19|8[39])|4[129]9|6[12]9)|6(?:19[12]|2(?:[23]9|77))|7(?:1[13]9|2[15]9|419|5(?:1[89]|29)|6[15]9|7[178]9))\\d{5,6}|8[1-35-9]\\d{7,10}" },
+      { countryCode: "IE", phonePrefix: "+353", phoneRegex: "8(?:22\\d{6}|[35-9]\\d{7})" },
+      { countryCode: "IL", phonePrefix: "+972", phoneRegex: "5(?:[0-47-9]\\d{2}|5(?:01|2[23]|3[2-4]|4[45]|5[5689]|6[6-8]|7[0178]|8[6-9]|9[2-9])|6[2-9]\\d)\\d{5}" },
+      { countryCode: "IM", phonePrefix: "+44", phoneRegex: "7(?:4576|[59]24\\d|624[0-4689])\\d{5}" },
+      { countryCode: "IN", phonePrefix: "+91", phoneRegex: "(?:600[1-3]\\d|7(?:0\\d{3}|19[0-5]\\d|2(?:[0235679]\\d{2}|[14][017-9]\\d|8(?:[0-59]\\d|[678][089]))|3(?:[05-8]\\d{2}|1(?:[089]\\d|11|7[5-8])|2(?:[0-49][089]|[5-8]\\d)|3[017-9]\\d|4(?:[07-9]\\d|11)|9(?:[016-9]\\d|[2-5][089]))|4(?:0\\d{2}|1(?:[015-9]\\d|[23][089]|4[089])|2(?:0[089]|[1-7][089]|[89]\\d)|3(?:[0-8][089]|9\\d)|4(?:[089]\\d|11|7[02-8])|[56]\\d[089]|7(?:[089]\\d|11|7[02-8])|8(?:[0-24-7][089]|[389]\\d)|9(?:[0-6][089]|7[089]|[89]\\d))|5(?:[0346-8]\\d{2}|1(?:[07-9]\\d|11)|2(?:[04-9]\\d|[123][089])|5[017-9]\\d|9(?:[0-6][089]|[7-9]\\d))|6(?:0(?:[0-47]\\d|[5689][089])|(?:1[0-257-9]|[6-9]\\d)\\d|2(?:[0-4]\\d|[5-9][089])|3(?:[02-8][089]|[19]\\d)|4\\d[089]|5(?:[0-367][089]|[4589]\\d))|7(?:0(?:0[02-9]|[13-6][089]|[289]\\d|7[89])|[1-9]\\d{2})|8(?:[0-79]\\d{2}|8(?:[089]\\d|11|7[02-9]))|9(?:[089]\\d{2}|313|7(?:[02-8]\\d|9[07-9])))|8(?:0(?:[01589]\\d{2}|6[67]\\d|7(?:[02-8]\\d|9[05-9]))|1(?:[02-57-9]\\d{2}|1(?:[0-35-9]\\d|4[0-46-9])|6(?:[089]\\d|7[02-8]))|2(?:0(?:[089]\\d|7[02])|[14](?:[089]\\d|7[02-8])|[235-9]\\d{2})|3(?:[0357-9]\\d{2}|1(?:[089]\\d|7[02-6])|2(?:[09]\\d|77|8[0-689])|4(?:0[1-7]|[1-9]\\d)|6(?:[089]\\d|7[02-7]))|[45]\\d{3}|6(?:[02457-9]\\d{2}|1(?:[089]\\d|7[02-8])|3(?:[089]\\d|7[02-8])|6(?:[08]\\d|7[02-8]|9\\d))|7(?:0[07-9]\\d|[1-69]\\d{2}|[78](?:[089]\\d|7[02-8]))|8(?:[0-25-9]\\d{2}|3(?:[089]\\d|7[02-8])|4(?:[0489]\\d|7[02-68]))|9(?:[02-9]\\d{2}|1(?:[0289]\\d|7[2-6])))|9\\d{4})\\d{5}" },
+      { countryCode: "IO", phonePrefix: "+246", phoneRegex: "38\\d{5}" },
+      { countryCode: "IQ", phonePrefix: "+964", phoneRegex: "7[3-9]\\d{8}" },
+      { countryCode: "IR", phonePrefix: "+98", phoneRegex: "9(?:0[1-3]\\d{2}|[1-3]\\d{3}|9(?:0\\d{2}|44\\d|810|9(?:00|11|9[89])))\\d{5}" },
+      { countryCode: "IS", phonePrefix: "+354", phoneRegex: "38[589]\\d{6}|(?:6(?:1[1-8]|2[0-6]|3[027-9]|4[014679]|5[0159]|[67][0-69]|9\\d)|7(?:5[057]|[6-8]\\d)|8(?:2[0-59]|3[0-4]|[469]\\d|5[1-9]|88))\\d{4}" },
+      { countryCode: "IT", phonePrefix: "+39", phoneRegex: "3(?:[12457-9]\\d{8}|6\\d{7,8}|3\\d{7,9})" },
+      { countryCode: "JE", phonePrefix: "+44", phoneRegex: "7(?:509\\d|7(?:00[378]|97[7-9])|829\\d|937\\d)\\d{5}" },
+      { countryCode: "JM", phonePrefix: "+1", phoneRegex: "876(?:2[14-9]\\d|[348]\\d{2}|5(?:0[3-9]|[2-57-9]\\d|6[0-24-9])|7(?:0[07]|7\\d|8[1-47-9]|9[0-36-9])|9(?:[01]9|9[0579]))\\d{4}" },
+      { countryCode: "JO", phonePrefix: "+962", phoneRegex: "7(?:55|7[025-9]|8[0-25-9]|9[0-25-9])\\d{6}" },
+      { countryCode: "JP", phonePrefix: "+81", phoneRegex: "[7-9]0[1-9]\\d{7}" },
+      { countryCode: "KE", phonePrefix: "+254", phoneRegex: "7(?:[0-3679]\\d|4[0-46-9]|5[0-6]|8[0-25-9])\\d{6}" },
+      { countryCode: "KG", phonePrefix: "+996", phoneRegex: "(?:20[0-35]|5[0-24-7]\\d|7[07]\\d)\\d{6}" },
+      { countryCode: "KH", phonePrefix: "+855", phoneRegex: "(?:1(?:[013-79]\\d|[28]\\d{1,2})|2[3-6]48|3(?:[18]\\d{2}|[2-6]48)|4[2-4]48|5[2-5]48|6(?:[016-9]\\d|[2-5]48)|7(?:[07-9]\\d|[16]\\d{2}|[2-5]48)|8(?:[013-79]\\d|8\\d{2})|9(?:6\\d{2}|7\\d{1,2}|[0-589]\\d))\\d{5}" },
+      { countryCode: "KI", phonePrefix: "+686", phoneRegex: "(?:6(?:200[01]|30[01]\\d)|7(?:200[01]|3(?:0[0-5]\\d|140)))\\d{3}" },
+      { countryCode: "KM", phonePrefix: "+269", phoneRegex: "[34]\\d{6}" },
+      { countryCode: "KN", phonePrefix: "+1", phoneRegex: "869(?:5(?:5[6-8]|6[5-7])|66\\d|76[02-7])\\d{4}" },
+      { countryCode: "KP", phonePrefix: "+850", phoneRegex: "19[123]\\d{7}" },
+      { countryCode: "KR", phonePrefix: "+82", phoneRegex: "1[0-26-9]\\d{7,8}" },
+      { countryCode: "KW", phonePrefix: "+965", phoneRegex: "(?:5(?:[05]\\d{2}|1[0-7]\\d|2(?:22|5[25])|6[56]\\d)|6(?:0[034679]\\d|222|5[015-9]\\d|6\\d{2}|7(?:0[013-9]|[67]\\d)|9(?:[069]\\d|3[039]))|9(?:0[09]\\d|22\\d|4[01479]\\d|55\\d|6[0679]\\d|7(?:02|[1-9]\\d)|8[057-9]\\d|9\\d{2}))\\d{4}" },
+      { countryCode: "KY", phonePrefix: "+1", phoneRegex: "345(?:32[1-9]|5(?:1[67]|2[5-79]|4[6-9]|50|76)|649|9(?:1[67]|2[2-9]|3[689]))\\d{4}" },
+      { countryCode: "KZ", phonePrefix: "+7", phoneRegex: "7(?:0[012578]|47|6[02-4]|7[15-8]|85)\\d{7}" },
+      { countryCode: "LA", phonePrefix: "+856", phoneRegex: "20(?:2[2389]|5[24-689]|7[6-8]|9[125-9])\\d{6}" },
+      { countryCode: "LB", phonePrefix: "+961", phoneRegex: "(?:3\\d|7(?:[01]\\d|6[013-9]|8[89]|9[1-3])|81\\d)\\d{5}" },
+      { countryCode: "LC", phonePrefix: "+1", phoneRegex: "758(?:28[4-7]|384|4(?:6[01]|8[4-9])|5(?:1[89]|20|84)|7(?:1[2-9]|2\\d|3[01]))\\d{4}" },
+      { countryCode: "LI", phonePrefix: "+423", phoneRegex: "6(?:5(?:09|1\\d|20)|6(?:0[0-6]|10|2[06-9]|39))\\d{5}|7(?:[37-9]\\d|42|56)\\d{4}" },
+      { countryCode: "LK", phonePrefix: "+94", phoneRegex: "7[0125-8]\\d{7}" },
+      { countryCode: "LR", phonePrefix: "+231", phoneRegex: "(?:20\\d{2}|330\\d|4[67]|5(?:55)?\\d|77\\d{2}|88\\d{2})\\d{5}" },
+      { countryCode: "LS", phonePrefix: "+266", phoneRegex: "[56]\\d{7}" },
+      { countryCode: "LT", phonePrefix: "+370", phoneRegex: "6\\d{7}" },
+      { countryCode: "LU", phonePrefix: "+352", phoneRegex: "6[25-79][18]\\d{6}" },
+      { countryCode: "LV", phonePrefix: "+371", phoneRegex: "2\\d{7}" },
+      { countryCode: "LY", phonePrefix: "+218", phoneRegex: "9[1-6]\\d{7}" },
+      { countryCode: "MA", phonePrefix: "+212", phoneRegex: "(?:6(?:[0-79]\\d|8[0-247-9])|7(?:[07][07]|6[12]))\\d{6}" },
+      { countryCode: "MC", phonePrefix: "+377", phoneRegex: "3\\d{7}|4(?:4\\d|5[1-9])\\d{5}|6\\d{8}" },
+      { countryCode: "MD", phonePrefix: "+373", phoneRegex: "(?:562|6\\d{2}|7(?:[189]\\d|6[07]|7[457-9]))\\d{5}" },
+      { countryCode: "ME", phonePrefix: "+382", phoneRegex: "6(?:00\\d|3[024]\\d|6[0-25]\\d|[7-9]\\d{2})\\d{4}" },
+      { countryCode: "MF", phonePrefix: "+590", phoneRegex: "690(?:0[05-9]|[1-9]\\d)\\d{4}" },
+      { countryCode: "MG", phonePrefix: "+261", phoneRegex: "3[2-49]\\d{7}" },
+      { countryCode: "MH", phonePrefix: "+692", phoneRegex: "(?:235|329|45[56]|545)\\d{4}" },
+      { countryCode: "MK", phonePrefix: "+389", phoneRegex: "7(?:[0-25-8]\\d{2}|32\\d|421|9[23]\\d)\\d{4}" },
+      { countryCode: "ML", phonePrefix: "+223", phoneRegex: "(?:2(?:079|17\\d)|[679]\\d{3}|8[239]\\d{2})\\d{4}" },
+      { countryCode: "MM", phonePrefix: "+95", phoneRegex: "17[01]\\d{4}|9(?:2(?:[0-4]|5\\d{2}|6[0-5]\\d)|3(?:[0-36]|4[069])\\d|4(?:0[0-4]\\d|[1379]\\d|2\\d{2}|4[0-589]\\d|5\\d{2}|88)|5[0-6]|6(?:1\\d|9\\d{2}|\\d)|7(?:3\\d|[6-9]\\d{2})|8(?:\\d|9\\d{2})|9(?:1\\d|[5-7]\\d{2}|[089]))\\d{5}" },
+      { countryCode: "MN", phonePrefix: "+976", phoneRegex: "(?:8(?:[05689]\\d|3[01])|9[013-9]\\d)\\d{5}" },
+      { countryCode: "MO", phonePrefix: "+853", phoneRegex: "6(?:[2356]\\d|8[158])\\d{5}" },
+      { countryCode: "MP", phonePrefix: "+1", phoneRegex: "670(?:2(?:3[3-7]|56|8[5-8])|32[1238]|4(?:33|8[348])|5(?:32|55|88)|6(?:64|70|82)|78[3589]|8[3-9]8|989)\\d{4}" },
+      { countryCode: "MQ", phonePrefix: "+596", phoneRegex: "696(?:[0-47-9]\\d|5[0-6]|6[0-4])\\d{4}" },
+      { countryCode: "MR", phonePrefix: "+222", phoneRegex: "[234][0-46-9]\\d{6}" },
+      { countryCode: "MS", phonePrefix: "+1", phoneRegex: "66449[2-6]\\d{4}" },
+      { countryCode: "MT", phonePrefix: "+356", phoneRegex: "(?:7(?:210|[79]\\d{2})|9(?:2(?:1[01]|31)|69[67]|8(?:1[1-3]|89|97)|9\\d{2}))\\d{4}" },
+      { countryCode: "MU", phonePrefix: "+230", phoneRegex: "5(?:2[59]\\d|4(?:2[1-389]|4\\d|7[1-9]|9\\d)|7\\d{2}|8(?:[0-25689]\\d|4[3479]|7[15-8])|9[0-8]\\d)\\d{4}" },
+      { countryCode: "MV", phonePrefix: "+960", phoneRegex: "(?:46[46]|7[3-9]\\d|9[15-9]\\d)\\d{4}" },
+      { countryCode: "MW", phonePrefix: "+265", phoneRegex: "(?:111|77\\d|88\\d|99\\d)\\d{6}" },
+      { countryCode: "MX", phonePrefix: "+52", phoneRegex: "1(?:(?:33|55|81)\\d{8}|(?:2(?:2[1-9]|3[1-35-8]|4[13-9]|7[1-689]|8[1-578]|9[467])|3(?:1[1-79]|[2458][1-9]|7[1-8]|9[1-5])|4(?:1[1-57-9]|[24-6][1-9]|[37][1-8]|8[1-35-9]|9[2-689])|5(?:88|9[1-79])|6(?:1[2-68]|[2-4][1-9]|5[1-3689]|6[12457-9]|7[1-7]|8[67]|9[4-8])|7(?:[13467][1-9]|2[1-8]|5[13-9]|8[1-69]|9[17])|8(?:2[13-689]|3[1-6]|4[124-6]|6[1246-9]|7[1-378]|9[12479])|9(?:1[346-9]|2[1-4]|3[2-46-8]|5[1348]|[69][1-9]|7[12]|8[1-8]))\\d{7})" },
+      { countryCode: "MY", phonePrefix: "+60", phoneRegex: "1(?:1[1-6]\\d{2}|[02-4679][2-9]\\d|59\\d{2}|8(?:1[23]|[2-9]\\d))\\d{5}" },
+      { countryCode: "MZ", phonePrefix: "+258", phoneRegex: "8[2-7]\\d{7}" },
+      { countryCode: "NA", phonePrefix: "+264", phoneRegex: "(?:60|8[125])\\d{7}" },
+      { countryCode: "NC", phonePrefix: "+687", phoneRegex: "(?:5[0-4]|[79]\\d|8[0-79])\\d{4}" },
+      { countryCode: "NE", phonePrefix: "+227", phoneRegex: "(?:8[089]|9\\d)\\d{6}" },
+      { countryCode: "NF", phonePrefix: "+672", phoneRegex: "3[58]\\d{4}" },
+      { countryCode: "NG", phonePrefix: "+234", phoneRegex: "(?:1(?:7[34]\\d|8(?:04|[124579]\\d|8[0-3])|95\\d)|287[0-7]|3(?:18[1-8]|88[0-7]|9(?:8[5-9]|6[1-5]))|4(?:28[0-2]|6(?:7[1-9]|8[02-47])|88[0-2])|5(?:2(?:7[7-9]|8\\d)|38[1-79]|48[0-7]|68[4-7])|6(?:2(?:7[7-9]|8\\d)|4(?:3[7-9]|[68][129]|7[04-69]|9[1-8])|58[0-2]|98[7-9])|7(?:38[0-7]|69[1-8]|78[2-4])|8(?:28[3-9]|38[0-2]|4(?:2[12]|3[147-9]|5[346]|7[4-9]|8[014-689]|90)|58[1-8]|78[2-9]|88[5-7])|98[07]\\d)\\d{4}|(?:70(?:[1-689]\\d|7[0-3])|8(?:0(?:1[01]|[2-9]\\d)|1(?:[0-8]\\d|9[01]))|90[235-9]\\d)\\d{6}" },
+      { countryCode: "NI", phonePrefix: "+505", phoneRegex: "(?:5(?:5[0-7]|[78]\\d)|6(?:20|3[035]|4[045]|5[05]|77|8[1-9]|9[059])|7[5-8]\\d|8\\d{2})\\d{5}" },
+      { countryCode: "NL", phonePrefix: "+31", phoneRegex: "6[1-58]\\d{7}" },
+      { countryCode: "NO", phonePrefix: "+47", phoneRegex: "(?:4[015-8]|5[89]|87|9\\d)\\d{6}" },
+      { countryCode: "NP", phonePrefix: "+977", phoneRegex: "9(?:6[013]|7[245]|8[0-24-6])\\d{7}" },
+      { countryCode: "NR", phonePrefix: "+674", phoneRegex: "55[5-9]\\d{4}" },
+      { countryCode: "NU", phonePrefix: "+683", phoneRegex: "[125]\\d{3}" },
+      { countryCode: "NZ", phonePrefix: "+64", phoneRegex: "2(?:[028]\\d{7,8}|1(?:[03]\\d{5,7}|[12457]\\d{5,6}|[689]\\d{5})|[79]\\d{7})" },
+      { countryCode: "OM", phonePrefix: "+968", phoneRegex: "7[19]\\d{6}|9(?:0[1-9]|[1-9]\\d)\\d{5}" },
+      { countryCode: "PA", phonePrefix: "+507", phoneRegex: "(?:1[16]1|21[89]|8(?:1[01]|7[23]))\\d{4}|6(?:[024-9]\\d|1[0-5]|3[0-24-9])\\d{5}" },
+      { countryCode: "PE", phonePrefix: "+51", phoneRegex: "9\\d{8}" },
+      { countryCode: "PF", phonePrefix: "+689", phoneRegex: "8[79]\\d{6}" },
+      { countryCode: "PG", phonePrefix: "+675", phoneRegex: "7(?:[0-689]\\d|75)\\d{5}" },
+      { countryCode: "PH", phonePrefix: "+63", phoneRegex: "(?:81[37]|9(?:0[5-9]|1[024-9]|2[0-35-9]|3[02-9]|4[235-9]|5[056]|6[5-7]|7[34-79]|89|9[4-9]))\\d{7}" },
+      { countryCode: "PK", phonePrefix: "+92", phoneRegex: "3(?:[014]\\d|2[0-5]|3[0-7]|55|64)\\d{7}" },
+      { countryCode: "PL", phonePrefix: "+48", phoneRegex: "(?:45|5[0137]|6[069]|7[2389]|88)\\d{7}" },
+      { countryCode: "PM", phonePrefix: "+508", phoneRegex: "(?:40|55)\\d{4}" },
+      { countryCode: "PR", phonePrefix: "+1", phoneRegex: "(?:787|939)[2-9]\\d{6}" },
+      { countryCode: "PS", phonePrefix: "+970", phoneRegex: "5[69]\\d{7}" },
+      { countryCode: "PT", phonePrefix: "+351", phoneRegex: "9(?:[1236]\\d{2}|480)\\d{5}" },
+      { countryCode: "PW", phonePrefix: "+680", phoneRegex: "(?:6[234689]0|77[45789])\\d{4}" },
+      { countryCode: "PY", phonePrefix: "+595", phoneRegex: "9(?:6[12]|[78][1-6]|9[1-5])\\d{6}" },
+      { countryCode: "QA", phonePrefix: "+974", phoneRegex: "[3567]\\d{7}" },
+      { countryCode: "RE", phonePrefix: "+262", phoneRegex: "69(?:2\\d{2}|3(?:0[0-46]|1[013]|2[0-2]|3[039]|4[0-7]|5[05]|6[06]|7[07]|8[0-38]|9[0-479]))\\d{4}" },
+      { countryCode: "RO", phonePrefix: "+40", phoneRegex: "7(?:[0-8]\\d{2}|99\\d)\\d{5}" },
+      { countryCode: "RS", phonePrefix: "+381", phoneRegex: "6(?:[0-689]|7\\d)\\d{6,7}" },
+      { countryCode: "RU", phonePrefix: "+7", phoneRegex: "9\\d{9}" },
+      { countryCode: "RW", phonePrefix: "+250", phoneRegex: "7[238]\\d{7}" },
+      { countryCode: "SA", phonePrefix: "+966", phoneRegex: "(?:5(?:[013-689]\\d|7[0-36-8])|811\\d)\\d{6}" },
+      { countryCode: "SB", phonePrefix: "+677", phoneRegex: "48\\d{3}|7(?:30|[46-8]\\d|5[025-9]|9[0-5])\\d{4}|8[4-9]\\d{5}|9(?:1[2-9]|2[013-9]|3[0-2]|[46]\\d|5[0-46-9]|7[0-689]|8[0-79]|9[0-8])\\d{4}" },
+      { countryCode: "SC", phonePrefix: "+248", phoneRegex: "2[5-8]\\d{5}" },
+      { countryCode: "SD", phonePrefix: "+249", phoneRegex: "9[0-3569]\\d{7}" },
+      { countryCode: "SE", phonePrefix: "+46", phoneRegex: "7[02369]\\d{7}" },
+      { countryCode: "SG", phonePrefix: "+65", phoneRegex: "(?:8[1-8]|9[0-8])\\d{6}" },
+      { countryCode: "SH", phonePrefix: "+290", phoneRegex: "[56]\\d{4}" },
+      { countryCode: "SI", phonePrefix: "+386", phoneRegex: "(?:[37][01]\\d|4[0139]\\d|51\\d|6(?:[48]\\d|9[69]))\\d{5}" },
+      { countryCode: "SJ", phonePrefix: "+47", phoneRegex: "(?:4[015-8]|5[89]|9\\d)\\d{6}" },
+      { countryCode: "SK", phonePrefix: "+421", phoneRegex: "9(?:0(?:[1-8]\\d|9[1-9])|(?:1[0-24-9]|[45]\\d)\\d)\\d{5}" },
+      { countryCode: "SL", phonePrefix: "+232", phoneRegex: "(?:2[15]|3[03-5]|4[04]|5[05]|66|7[6-9]|8[08]|99)\\d{6}" },
+      { countryCode: "SM", phonePrefix: "+378", phoneRegex: "6[16]\\d{6}" },
+      { countryCode: "SN", phonePrefix: "+221", phoneRegex: "7(?:[06-8]\\d|21|90)\\d{6}" },
+      { countryCode: "SO", phonePrefix: "+252", phoneRegex: "(?:15\\d|2(?:4\\d|8)|3[59]\\d{2}|4[89]\\d{2}|6[1-9]?\\d{2}|7(?:[1-8]\\d|9\\d{1,2})|8[08]\\d{2}|9(?:0[67]|[2-9])\\d)\\d{5}" },
+      { countryCode: "SR", phonePrefix: "+597", phoneRegex: "(?:7[124-7]|8[125-9])\\d{5}" },
+      { countryCode: "SS", phonePrefix: "+211", phoneRegex: "(?:12|9[1257])\\d{7}" },
+      { countryCode: "ST", phonePrefix: "+239", phoneRegex: "9(?:0(?:0[5-9]|[1-9]\\d)|[89]\\d{2})\\d{3}" },
+      { countryCode: "SV", phonePrefix: "+503", phoneRegex: "[67]\\d{7}" },
+      { countryCode: "SX", phonePrefix: "+1", phoneRegex: "7215(?:1[02]|2\\d|5[034679]|8[014-8])\\d{4}" },
+      { countryCode: "SY", phonePrefix: "+963", phoneRegex: "9(?:22|[3-589]\\d|6[024-9])\\d{6}" },
+      { countryCode: "SZ", phonePrefix: "+268", phoneRegex: "7[6-9]\\d{6}" },
+      { countryCode: "TA", phonePrefix: "+290", phoneRegex: "undefined" },
+      { countryCode: "TC", phonePrefix: "+1", phoneRegex: "649(?:2(?:3[129]|4[1-7])|3(?:3[1-389]|4[1-8])|4[34][1-3])\\d{4}" },
+      { countryCode: "TD", phonePrefix: "+235", phoneRegex: "(?:6[023568]\\d|77\\d|9\\d{2})\\d{5}" },
+      { countryCode: "TG", phonePrefix: "+228", phoneRegex: "9[0-36-9]\\d{6}" },
+      { countryCode: "TH", phonePrefix: "+66", phoneRegex: "(?:14|6[1-6]|[89]\\d)\\d{7}" },
+      { countryCode: "TJ", phonePrefix: "+992", phoneRegex: "(?:41[18]|(?:5[05]|77|88|9[0-35-9])\\d)\\d{6}" },
+      { countryCode: "TK", phonePrefix: "+690", phoneRegex: "7[2-4]\\d{2,5}" },
+      { countryCode: "TL", phonePrefix: "+670", phoneRegex: "7[3-8]\\d{6}" },
+      { countryCode: "TM", phonePrefix: "+993", phoneRegex: "6[1-9]\\d{6}" },
+      { countryCode: "TN", phonePrefix: "+216", phoneRegex: "(?:[259]\\d|4[0-6])\\d{6}" },
+      { countryCode: "TO", phonePrefix: "+676", phoneRegex: "(?:7[578]|8[47-9])\\d{5}" },
+      { countryCode: "TR", phonePrefix: "+90", phoneRegex: "5(?:(?:0[1-7]|22|[34]\\d|5[1-59]|9[246])\\d{2}|6161)\\d{5}" },
+      { countryCode: "TT", phonePrefix: "+1", phoneRegex: "868(?:2(?:6[6-9]|[789]\\d)|3(?:0[1-9]|1[02-9]|[2-9]\\d)|4[6-9]\\d|6(?:20|78|8\\d)|7(?:0[1-9]|1[02-9]|[2-9]\\d))\\d{4}" },
+      { countryCode: "TV", phonePrefix: "+688", phoneRegex: "(?:70\\d|90)\\d{4}" },
+      { countryCode: "TW", phonePrefix: "+886", phoneRegex: "9[0-8]\\d{7}" },
+      { countryCode: "TZ", phonePrefix: "+255", phoneRegex: "(?:6[2-9]|7[13-9])\\d{7}" },
+      { countryCode: "UA", phonePrefix: "+380", phoneRegex: "(?:39|50|6[36-8]|7[1-3]|9[1-9])\\d{7}" },
+      { countryCode: "UG", phonePrefix: "+256", phoneRegex: "7(?:(?:0[0-7]|[15789]\\d|30|4[0-4])\\d|2(?:[03]\\d|60))\\d{5}" },
+      { countryCode: "US", phonePrefix: "+1", phoneRegex: "(?:2(?:0[1-35-9]|1[02-9]|2[03-589]|3[149]|4[08]|5[1-46]|6[0279]|7[026]|8[13])|3(?:0[1-57-9]|1[02-9]|2[0135]|3[0-24679]|4[67]|5[12]|6[014]|8[056])|4(?:0[124-9]|1[02-579]|2[3-5]|3[0245]|4[0235]|58|6[39]|7[0589]|8[04])|5(?:0[1-57-9]|1[0235-8]|20|3[0149]|4[01]|5[19]|6[1-47]|7[013-5]|8[056])|6(?:0[1-35-9]|1[024-9]|2[03689]|3[016]|4[16]|5[017]|6[0-279]|78|8[012])|7(?:0[1-46-8]|1[02-9]|2[0457]|3[1247]|4[037]|5[47]|6[02359]|7[02-59]|8[156])|8(?:0[1-68]|1[02-8]|28|3[0-258]|4[3578]|5[046-9]|6[02-5]|7[028])|9(?:0[1346-9]|1[02-9]|2[0589]|3[014678]|4[0179]|5[12469]|7[0-3589]|8[04-69]))[2-9]\\d{6}" },
+      { countryCode: "UY", phonePrefix: "+598", phoneRegex: "9[1-9]\\d{6}" },
+      { countryCode: "UZ", phonePrefix: "+998", phoneRegex: "6(?:1(?:2(?:98|2[01])|35[0-4]|50\\d|61[23]|7(?:[01][017]|4\\d|55|9[5-9]))|2(?:11\\d|2(?:[12]1|9[01379])|5(?:[126]\\d|3[0-4])|7\\d{2})|5(?:19[01]|2(?:27|9[26])|30\\d|59\\d|7\\d{2})|6(?:2(?:1[5-9]|2[0367]|38|41|52|60)|3[79]\\d|4(?:56|83)|7(?:[07]\\d|1[017]|3[07]|4[047]|5[057]|67|8[0178]|9[79])|9[0-3]\\d)|7(?:2(?:24|3[237]|4[5-9]|7[15-8])|5(?:7[12]|8[0589])|7(?:0\\d|[39][07])|9(?:0\\d|7[079]))|9(?:2(?:1[1267]|5\\d|3[01]|7[0-4])|5[67]\\d|6(?:2[0-26]|8\\d)|7\\d{2}))\\d{4}|7(?:0\\d{3}|1(?:13[01]|6(?:0[47]|1[67]|66)|71[3-69]|98\\d)|2(?:2(?:2[79]|95)|3(?:2[5-9]|6[0-6])|57\\d|7(?:0\\d|1[17]|2[27]|3[37]|44|5[057]|66|88))|3(?:2(?:1[0-6]|21|3[469]|7[159])|33\\d|5(?:0[0-4]|5[579]|9\\d)|7(?:[0-3579]\\d|4[0467]|6[67]|8[078])|9[4-6]\\d)|4(?:2(?:29|5[0257]|6[0-7]|7[1-57])|5(?:1[0-4]|8\\d|9[5-9])|7(?:0\\d|1[024589]|2[0127]|3[0137]|[46][07]|5[01]|7[5-9]|9[079])|9(?:7[015-9]|[89]\\d))|5(?:112|2(?:0\\d|2[29]|[49]4)|3[1568]\\d|52[6-9]|7(?:0[01578]|1[017]|[23]7|4[047]|[5-7]\\d|8[78]|9[079]))|6(?:2(?:2[1245]|4[2-4])|39\\d|41[179]|5(?:[349]\\d|5[0-2])|7(?:0[017]|[13]\\d|22|44|55|67|88))|9(?:22[128]|3(?:2[0-4]|7\\d)|57[05629]|7(?:2[05-9]|3[37]|4\\d|60|7[2579]|87|9[07])))\\d{4}|9[0-57-9]\\d{7}" },
+      { countryCode: "VA", phonePrefix: "+39", phoneRegex: "3(?:[12457-9]\\d{8}|6\\d{7,8}|3\\d{7,9})" },
+      { countryCode: "VC", phonePrefix: "+1", phoneRegex: "784(?:4(?:3[0-5]|5[45]|89|9[0-58])|5(?:2[6-9]|3[0-4]))\\d{4}" },
+      { countryCode: "VE", phonePrefix: "+58", phoneRegex: "4(?:1[24-8]|2[46])\\d{7}" },
+      { countryCode: "VG", phonePrefix: "+1", phoneRegex: "284(?:(?:3(?:0[0-3]|4[0-7]|68|9[34])|4(?:4[0-6]|68|99)|54[0-57])\\d{4}|496[6-9]\\d{3})" },
+      { countryCode: "VI", phonePrefix: "+1", phoneRegex: "340(?:2(?:01|2[0678]|44|77)|3(?:32|44)|4(?:22|7[34])|5(?:1[34]|55)|6(?:26|4[23]|77|9[023])|7(?:1[2-589]|27|7\\d)|884|998)\\d{4}" },
+      { countryCode: "VN", phonePrefix: "+84", phoneRegex: "(?:9\\d|1(?:2\\d|6[2-9]|8[68]|99))\\d{7}|8(?:6[89]|8\\d|9[89])\\d{6}" },
+      { countryCode: "VU", phonePrefix: "+678", phoneRegex: "(?:5(?:7[2-5]|[0-689]\\d)|7[013-7]\\d)\\d{4}" },
+      { countryCode: "WF", phonePrefix: "+681", phoneRegex: "(?:50|68|72|8[23])\\d{4}" },
+      { countryCode: "WS", phonePrefix: "+685", phoneRegex: "(?:60|7[25-7]\\d)\\d{4}" },
+      { countryCode: "YE", phonePrefix: "+967", phoneRegex: "7[0137]\\d{7}" },
+      { countryCode: "YT", phonePrefix: "+262", phoneRegex: "639(?:0[0-79]|1[019]|[26]\\d|3[09]|[45]0|7[06]|9[04-79])\\d{4}" },
+      { countryCode: "ZA", phonePrefix: "+27", phoneRegex: "(?:6\\d|7[0-46-9])\\d{7}|8(?:[1-4]\\d{1,5}|5\\d{5})\\d{2}" },
+      { countryCode: "ZM", phonePrefix: "+260", phoneRegex: "9(?:5[034589]|[67]\\d)\\d{6}" },
+      { countryCode: "ZW", phonePrefix: "+263", phoneRegex: "(?:7(?:1[2-8]|3[2-9]|7[1-9]|8[2-5])|8644)\\d{6}" }
+    ];
+
+    // Populate country code dropdown
+    const countryCodeDropdown = document.getElementById("countryCode");
+    countriesPhoneDetails.forEach(({ countryCode }) => {
+        const option = document.createElement("option");
+        option.value = countryCode;
+        option.textContent = countryCode;
+        countryCodeDropdown.appendChild(option);
+    });
+
+    const toastElement = document.getElementById("successToast");
+    const toast = new bootstrap.Toast(toastElement);
+
+    const showSuccessToast = () => {
+        toast.show();
+    };
+
+    const copyToClipboard = (text) => {
+        navigator.clipboard.writeText(text)
+            .then(() => showSuccessToast())
+            .catch(() => alert("Failed to copy to clipboard."));
+    };
+
+    // Event listeners
+    document.getElementById("clearButton").addEventListener("click", () => {
+        document.getElementById("phoneForm").reset();
+        document.getElementById("generatedPhones").value = "";
+    });
+
+    document.getElementById("generateButton").addEventListener("click", () => {
+        const selectedCode = document.getElementById("countryCode").value;
+        const count = parseInt(document.getElementById("count").value, 10);
+        const generatedPhones = document.getElementById("generatedPhones");
+
+        if (!selectedCode || count <= 0) {
+            alert("Please select a valid country code and enter a positive count.");
+            return;
+        }
+
+        const countryDetails = countriesPhoneDetails.find(
+            (country) => country.countryCode === selectedCode
+        );
+
+        if (!countryDetails) {
+            alert("Invalid country code selected.");
+            return;
+        }
+
+        const { phonePrefix, phoneRegex } = countryDetails;
+        const randexp = new RandExp(phoneRegex);
+        let phoneNumbers = [];
+
+        for (let i = 0; i < count; i++) {
+            phoneNumbers.push(`${phonePrefix}${randexp.gen()}`);
+        }
+
+        const generatedText = phoneNumbers.join("\n");
+        generatedPhones.value = generatedText;
+
+        // Automatically copy to clipboard and show toast
+        copyToClipboard(generatedText);
+    });
+
+    document.getElementById("copyButton").addEventListener("click", () => {
+        const generatedPhones = document.getElementById("generatedPhones");
+        if (generatedPhones.value.trim() === "") {
+            alert("No phone numbers to copy.");
+            return;
+        }
+
+        copyToClipboard(generatedPhones.value);
+    });
+</script>
+
+</body>
+</html>
